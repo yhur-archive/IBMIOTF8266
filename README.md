@@ -1,6 +1,6 @@
 # IBM IOT Foundation for ESP8266
 
-With this library, the developer can create a WiFi ESP8266 device which
+With this library, the developer can create an ESP8266 IBM IOT device which
 1. helps configure with the Captive Portal if not configured as in the following picture,
 2. or boots with the stored configuration if configured already,
 3. connects to the WiFi/IBM IOT Foundation and run the loop function
