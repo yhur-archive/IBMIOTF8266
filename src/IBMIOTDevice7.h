@@ -4,7 +4,7 @@
 #include <ESP8266WebServer.h>
 #include <PubSubClient.h>
 #include <ESP8266httpUpdate.h>
-#include <iotWIFIDevice.h>
+#include <ConfigPortal8266.h>
 
 const char*         publishTopic  = "iot-2/evt/status/fmt/json";
 const char*         infoTopic     = "iot-2/evt/info/fmt/json";
@@ -40,7 +40,7 @@ bool subscribeTopic(const char* topic) {
 }
 
 void initDevice() {
-    iotInitDevice();
+    loadConfig();
     if (LittleFS.exists(fpFile)) {
         File f = LittleFS.open(fpFile, "r");
         fingerprint = f.readString();

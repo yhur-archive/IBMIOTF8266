@@ -4,7 +4,7 @@
 #include <ESP8266WebServer.h>
 #include <PubSubClient.h>
 #include <ESP8266httpUpdate.h>
-#include <iotWIFIDevice.h>
+#include <ConfigPortal8266.h>
 
 char                publishTopic[200];
 char                infoTopic[200];
@@ -45,7 +45,7 @@ bool subscribeTopic(const char* topic) {
 }
 
 void initDevice() {
-    iotInitDevice();
+    loadConfig();
     if (cfg.containsKey("devType") && cfg.containsKey("devType")) {
         char temp[200];
         sprintf(publishTopic, t_publishTopic, (const char*)cfg["devType"], (const char*)cfg["devId"]);

@@ -2,7 +2,7 @@
 #include <ESP8266WiFi.h>
 #include <IBMIOTDevice7.h>
 
-String user_html = ""
+String user_config_html = ""
     "<p><input type='text' name='org' placeholder='org'>"
     "<p><input type='text' name='devType' placeholder='Device Type'>"
     "<p><input type='text' name='devId' placeholder='Device Id'>"
@@ -28,7 +28,7 @@ void handleUserCommand(JsonDocument* root) {
     // put code for the user command here, and put the following
     // code if any of device status changes to notify the change
 
-        if(d.containsKey("valve")) {
+    if(d.containsKey("valve")) {
         if (strcmp(d["valve"], "on")) {
             digitalWrite(RELAY, LOW);
         } else {
@@ -63,7 +63,7 @@ void setup() {
     initDevice();
     // *** If no "config" is found or "config" is not "done", run configDevice ***
     if(!cfg.containsKey("config") || strcmp((const char*)cfg["config"], "done")) {
-        iotConfigDevice();
+        configDevice();
     }
     WiFi.mode(WIFI_STA);
     WiFi.begin((const char*)cfg["ssid"], (const char*)cfg["w_pw"]);

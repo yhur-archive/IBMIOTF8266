@@ -1,1 +1,1 @@
-IBM IOT Valve Device
+IBMIOTF8266 Library with IOTValve controller example
