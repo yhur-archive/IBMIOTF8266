@@ -1,13 +1,11 @@
 #include <Arduino.h>
-#include <ESP8266WiFi.h>
-#include <IBMIOTDevice7.h>
+#include <IBMIOTF8266.h>
 
-String user_config_html = ""
-    "<p><input type='text' name='org' placeholder='org'>"
-    "<p><input type='text' name='devType' placeholder='Device Type'>"
-    "<p><input type='text' name='devId' placeholder='Device Id'>"
-    "<p><input type='text' name='token' placeholder='Device Token'>"
+// USER CODE EXAMPLE : Publish Interval. The periodic update is normally recommended.
+// And this can be a good example for the user code addition
+String user_html = ""
     "<p><input type='text' name='meta.pubInterval' placeholder='Publish Interval'>";
+// USER CODE EXAMPLE : command handling
 
 char*               ssid_pfix = (char*)"IOTValve";
 unsigned long       lastPublishMillis = - pubInterval;
@@ -17,7 +15,9 @@ void publishData() {
     StaticJsonDocument<512> root;
     JsonObject data = root.createNestedObject("d");
 
+// USER CODE EXAMPLE : command handling
     data["valve"] = digitalRead(RELAY) == 1 ? "on" : "off";
+// USER CODE EXAMPLE : command handling
 
     serializeJson(root, msgBuffer);
     client.publish(publishTopic, msgBuffer);
@@ -25,9 +25,9 @@ void publishData() {
 
 void handleUserCommand(JsonDocument* root) {
     JsonObject d = (*root)["d"];
-    // put code for the user command here, and put the following
-    // code if any of device status changes to notify the change
-
+    
+// USER CODE EXAMPLE : status/change update
+// code if any of device status changes to notify the change
     if(d.containsKey("valve")) {
         if (strcmp(d["valve"], "on")) {
             digitalWrite(RELAY, LOW);
@@ -36,6 +36,7 @@ void handleUserCommand(JsonDocument* root) {
         }
         lastPublishMillis = - pubInterval;
     }
+// USER CODE EXAMPLE
 }
 
 void message(char* topic, byte* payload, unsigned int payloadLength) {
@@ -50,7 +51,10 @@ void message(char* topic, byte* payload, unsigned int payloadLength) {
 
     handleIOTCommand(topic, &root);
     if (!strcmp(updateTopic, topic)) {
+// USER CODE EXAMPLE : meta data update
+// If any meta data updated on the Internet, it can be stored to local variable to use for the logic
         pubInterval = cfg["meta"]["pubInterval"];
+// USER CODE EXAMPLE
     } else if (!strncmp(commandTopic, topic, 10)) {            // strcmp return 0 if both string matches
         handleUserCommand(&root);
     }
@@ -58,7 +62,9 @@ void message(char* topic, byte* payload, unsigned int payloadLength) {
 
 void setup() {
     Serial.begin(115200);
+// USER CODE EXAMPLE : meta data update
     pinMode(RELAY, OUTPUT);
+// USER CODE EXAMPLE
 
     initDevice();
     // *** If no "config" is found or "config" is not "done", run configDevice ***
@@ -73,16 +79,13 @@ void setup() {
     }
     // main setup
     Serial.printf("\nIP address : "); Serial.println(WiFi.localIP());
+// USER CODE EXAMPLE : meta data to local variable
     JsonObject meta = cfg["meta"];
     pubInterval = meta.containsKey("pubInterval") ? atoi((const char*)meta["pubInterval"]) : 0;
     lastPublishMillis = - pubInterval;
+// USER CODE EXAMPLE
     
-    sprintf(iot_server, "%s.messaging.internetofthings.ibmcloud.com", (const char*)cfg["org"]);
-    if (!espClient.connect(iot_server, 8883)) {
-        Serial.println("connection failed");
-        return;
-    }
-    client.setServer(iot_server, 8883);   //IOT
+    set_iot_server();
     client.setCallback(message);
     iot_connect();
 }
@@ -91,6 +94,10 @@ void loop() {
     if (!client.connected()) {
         iot_connect();
     }
+// USER CODE EXAMPLE : main loop
+//     you can put any main code here, for example, 
+//     the continous data acquistion and local intelligence can be placed here
+// USER CODE EXAMPLE
     client.loop();
     if ((pubInterval != 0) && (millis() - lastPublishMillis > pubInterval)) {
         publishData();

@@ -6,32 +6,36 @@
 #include <ESP8266httpUpdate.h>
 #include <ConfigPortal8266.h>
 
-char                publishTopic[200];
-char                infoTopic[200];
-char                commandTopic[200];
-char                responseTopic[200];
-char                manageTopic[200];
-char                updateTopic[200];
-char                rebootTopic[200];
-char                resetTopic[200];
+char                publishTopic[200]   = "iot-2/evt/status/fmt/json";
+char                infoTopic[200]      = "iot-2/evt/info/fmt/json";
+char                commandTopic[200]   = "iot-2/cmd/+/fmt/+";
+char                responseTopic[200]  = "iotdm-1/response";
+char                manageTopic[200]    = "iotdevice-1/mgmt/manage";
+char                updateTopic[200]    = "iotdm-1/device/update";
+char                rebootTopic[200]    = "iotdm-1/mgmt/initiate/device/reboot";
+char                resetTopic[200]     = "iotdm-1/mgmt/initiate/device/factory_reset";
 
-const char*         t_publishTopic  = "iot-2/type/%s/id/%s/evt/status/fmt/json";
-const char*         t_infoTopic     = "iot-2/type/%s/id/%s/evt/info/fmt/json";
-const char*         t_commandTopic  = "iot-2/type/%s/id/%s/cmd/+/fmt/+";
-const char*         t_commandBase   = "iot-2/type/%s/id/%s/cmd/";
-const char*         t_responseTopic = "iotdm-1/type/%s/id/%s/response";
-const char*         t_manageTopic   = "iotdevice-1/type/%s/id/%s/mgmt/manage";
-const char*         t_updateTopic   = "iotdm-1/type/%s/id/%s/device/update";
-const char*         t_rebootTopic   = "iotdm-1/type/%s/id/%s/mgmt/initiate/device/reboot";
-const char*         t_resetTopic    = "iotdm-1/type/%s/id/%s/mgmt/initiate/device/factory_reset";
+String              user_config_html = ""
+    "<p><input type='text' name='org' placeholder='org'>"
+    "<p><input type='text' name='devType' placeholder='Device Type'>"
+    "<p><input type='text' name='devId' placeholder='Device Id'>"
+    "<p><input type='text' name='token' placeholder='Device Token'>";
+
+extern  String      user_html;
 
 ESP8266WebServer    server(80);
-WiFiClient          espClient;
-PubSubClient        client(espClient);
+WiFiClientSecure    wifiClientSecure;
+WiFiClient          wifiClient;
+PubSubClient        client;
 char                iot_server[100];
 char                msgBuffer[JSON_BUFFER_LENGTH];
-int                 cmdBaseLen = 0;
+int                 cmdBaseLen = 10;
 unsigned long       pubInterval;
+
+char                fpFile[] = "/fingerprint.txt";
+String              fingerprint = "B3 B7 C3 0D 9D 32 E6 A2 8A FC FD BA 11 BB 05 5E E1 D9 9E F7";
+int                 mqttPort = 8883;
+
 unsigned long       lastWiFiConnect;
 
 bool subscribeTopic(const char* topic) {
@@ -44,28 +48,71 @@ bool subscribeTopic(const char* topic) {
     }
 }
 
+void toGatewayTopic(char* topic, const char* devType, const char* devId) {
+    char buffer[200];
+    char devInfo[50];
+    sprintf(devInfo, "/type/%s/id/%s", devType, devId);
+
+    char* slash = strchr(topic, '/');
+    int len = slash - topic;
+    strncpy(buffer, topic, len);
+    strcpy(buffer + len, devInfo);
+    strcpy(buffer + strlen(buffer), slash);
+    strcpy(topic, buffer);
+}
+
 void initDevice() {
+    user_config_html += user_html;
     loadConfig();
-    if (cfg.containsKey("devType") && cfg.containsKey("devType")) {
-        char temp[200];
-        sprintf(publishTopic, t_publishTopic, (const char*)cfg["devType"], (const char*)cfg["devId"]);
-        sprintf(infoTopic, t_infoTopic, (const char*)cfg["devType"], (const char*)cfg["devId"]);
-        sprintf(commandTopic, t_commandTopic, (const char*)cfg["devType"], (const char*)cfg["devId"]);
-        sprintf(responseTopic, t_responseTopic, (const char*)cfg["devType"], (const char*)cfg["devId"]);
-        sprintf(manageTopic, t_manageTopic, (const char*)cfg["devType"], (const char*)cfg["devId"]);
-        sprintf(updateTopic, t_updateTopic, (const char*)cfg["devType"], (const char*)cfg["devId"]);
-        sprintf(rebootTopic, t_rebootTopic, (const char*)cfg["devType"], (const char*)cfg["devId"]);
-        sprintf(resetTopic, t_resetTopic, (const char*)cfg["devType"], (const char*)cfg["devId"]);
-        sprintf(temp, t_commandBase, (const char*)cfg["devType"], (const char*)cfg["devId"]);
-        cmdBaseLen = strlen(temp);
+    String org = cfg["org"];
+    if (org.indexOf(".") == -1) {
+        if (LittleFS.exists(fpFile)) {
+            File f = LittleFS.open(fpFile, "r");
+            fingerprint = f.readString();
+            fingerprint.trim();
+            f.close();
+        }
+        wifiClientSecure.setFingerprint(fingerprint.c_str());
+        client.setClient(wifiClientSecure);
+        sprintf(iot_server, "%s.messaging.internetofthings.ibmcloud.com", (const char*)cfg["org"]);
+    } else {
+        const char* devType = (const char*)cfg["devType"];
+        const char* devId = (const char*)cfg["devId"];
+        toGatewayTopic(publishTopic, devType, devId);
+        toGatewayTopic(infoTopic, devType, devId);
+        toGatewayTopic(commandTopic, devType, devId);
+        toGatewayTopic(responseTopic, devType, devId);
+        toGatewayTopic(manageTopic, devType, devId);
+        toGatewayTopic(updateTopic, devType, devId);
+        toGatewayTopic(rebootTopic, devType, devId);
+        toGatewayTopic(resetTopic, devType, devId);
+
+        client.setClient(wifiClient);
+        sprintf(iot_server, "%s", (const char*)cfg["org"]);
+        mqttPort = 1883;
     }
+}
+
+void set_iot_server() {
+    if(mqttPort == 8883) {
+        if (!wifiClientSecure.connect(iot_server, mqttPort)) {
+            Serial.println("connection failed");
+            return;
+        }
+    } else {
+        if (!wifiClient.connect(iot_server, mqttPort)) {
+            Serial.println("connection failed");
+            return;
+        }
+    }
+    client.setServer(iot_server, mqttPort);   //IOT
 }
 
 void iot_connect() {
 
     while (!client.connected()) {
-        sprintf(msgBuffer,"d:%s:%s", (const char*)cfg["devType"], (const char*)cfg["devId"]);
-        if (client.connect(msgBuffer)) {
+        sprintf(msgBuffer,"d:%s:%s:%s", (const char*)cfg["org"], (const char*)cfg["devType"], (const char*)cfg["devId"]);
+        if (client.connect(msgBuffer,"use-token-auth",cfg["token"])) {
             Serial.println("MQ connected");
         } else {
             if( digitalRead(RESET_PIN) == 0 ) {
@@ -160,13 +207,14 @@ void handleIOTCommand(char* topic, JsonDocument* root) {
             if(upgrade.containsKey("server") && 
                         upgrade.containsKey("port") && 
                         upgrade.containsKey("uri")) {
+		        Serial.println("firmware upgrading");
 	            const char *fw_server = upgrade["server"];
 	            int fw_server_port = atoi(upgrade["port"]);
 	            const char *fw_uri = upgrade["uri"];
                 ESPhttpUpdate.onProgress(update_progress);
                 ESPhttpUpdate.onError(update_error);
                 client.publish(infoTopic,"{\"info\":{\"upgrade\":\"Device will be upgraded.\"}}" );
-	            t_httpUpdate_return ret = ESPhttpUpdate.update(espClient, fw_server, fw_server_port, fw_uri);
+	            t_httpUpdate_return ret = ESPhttpUpdate.update(wifiClient, fw_server, fw_server_port, fw_uri);
 	            switch(ret) {
 		            case HTTP_UPDATE_FAILED:
                         response += "\"[update] Update failed. http://" + String(fw_server);
@@ -189,8 +237,6 @@ void handleIOTCommand(char* topic, JsonDocument* root) {
                 Serial.println(response);
             }
         } else if (d.containsKey("config")) {
-            // if the config answer is not published to the MQTT, then 
-            //     check MQTT_MAX_PACKET_SIZE in PubSubClient.h
             char maskBuffer[JSON_BUFFER_LENGTH];
             maskConfig(maskBuffer);
             String info = String("{\"config\":") + String(maskBuffer) + String("}");
