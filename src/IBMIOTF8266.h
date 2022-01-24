@@ -64,6 +64,12 @@ void toGatewayTopic(char* topic, const char* devType, const char* devId) {
 void initDevice() {
     user_config_html += user_html;
     loadConfig();
+
+    if(!cfg.containsKey("config") || strcmp((const char*)cfg["config"], "done")) {
+        configDevice();
+        // the device will be configured and rebooted in the configDevice()
+    }
+
     String org = cfg["org"];
     if (org.indexOf(".") == -1) {
         if (LittleFS.exists(fpFile)) {
