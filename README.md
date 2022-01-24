@@ -135,3 +135,22 @@ In the functions.
     pubInterval = meta.containsKey("pubInterval") ? atoi((const char*)meta["pubInterval"]) : 0;
 ```
 
+
+## dependancy and tips
+This library uses LittleFS instead of SPIFFS, and needs PubSubClient, ArduinoJson, ConfigPortal8266.
+
+And if you need to send a long MQTT message, then you can increase the default size of 256 byte by setting the build time variable MQTT_MAX_PACKET_SIZE as below. You may need this, if you want to implement the IR remote, since some appliance would need a long sequence of control signal.
+
+The following is a snnipet of a tested platformio.ini.
+
+```
+board_build.filesystem=littlefs 
+build_flags = 
+	-D MQTT_MAX_PACKET_SIZE=512
+lib_deps = 
+	knolleary/PubSubClient@^2.8
+	bblanchon/ArduinoJson@^6.18.5
+	https://github.com/iotlab101/ConfigPortal8266
+	https://github.com/yhur/IBMIOTF8266
+ ```
+
