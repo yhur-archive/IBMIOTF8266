@@ -82,12 +82,9 @@ void setup() {
 // USER CODE EXAMPLE
 
     initDevice();
-    // *** If no "config" is found or "config" is not "done", run configDevice ***
+    // If not configured it'll be configured and rebooted in the initDevice(),
+    // If configured, initDevice will set the proper setting to cfg variable
 
-
-    if(!cfg.containsKey("config") || strcmp((const char*)cfg["config"], "done")) {
-        configDevice();
-    }
     WiFi.mode(WIFI_STA);
     WiFi.begin((const char*)cfg["ssid"], (const char*)cfg["w_pw"]);
     while (WiFi.status() != WL_CONNECTED) {
