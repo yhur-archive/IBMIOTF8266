@@ -16,7 +16,7 @@ char                rebootTopic[200]    = "iotdm-1/mgmt/initiate/device/reboot";
 char                resetTopic[200]     = "iotdm-1/mgmt/initiate/device/factory_reset";
 
 String              user_config_html = ""
-    "<p><input type='text' name='org' placeholder='org'>"
+    "<p><input type='text' name='org' placeholder='org/edge'>"
     "<p><input type='text' name='devType' placeholder='Device Type'>"
     "<p><input type='text' name='devId' placeholder='Device Id'>"
     "<p><input type='text' name='token' placeholder='Device Token'>";
