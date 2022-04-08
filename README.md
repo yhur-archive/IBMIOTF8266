@@ -5,12 +5,6 @@ With this library, the developer can create an ESP8266 IBM IOT device which
 2. or boots with the stored configuration if configured already,
 3. connects to the WiFi/IBM IOT Foundation and run the loop function
 
-This uses the https://github.com/yhur/ConfigPortal8266 as the WiFi configuration utility.
-It handles
-1. IBM IOT Device Management like remote boot, remote factory reset
-2. IBM IOT meta data update
-3. Over the Air Firmware Update
-4. Configuration reporting
 ![IOT Device Setup Captive Portal](https://user-images.githubusercontent.com/13171662/150662713-58af1cfc-be48-457b-828a-d9c1afe0c561.jpg)
 
 # How to use the IBMIOTF8266
@@ -164,3 +158,11 @@ lib_deps =
 	https://github.com/yhur/IBMIOTF8266
  ```
 
+### More Info.
+It handles
+
+1. IBM IOT Device Management like remote boot, remote factory reset
+2. IBM IOT meta data update
+3. Over the Air Firmware Update
+4. Configuration reporting
+5. And this uses the https://github.com/yhur/ConfigPortal8266 as the WiFi configuration utility.
