@@ -1,11 +1,14 @@
 #include <Arduino.h>
 #include <IBMIOTF8266.h>
 
-// USER CODE EXAMPLE : Publish Interval. The periodic update is normally recommended.
-// And this can be a good example for the user code addition
 String user_html = ""
-    "<p><input type='text' name='meta.pubInterval' placeholder='Publish Interval'>";
-// USER CODE EXAMPLE : command handling
+// USER CODE EXAMPLE : your custom config variable 
+// in meta.XXXXX, XXXXX should match to ArduinoJson index to access
+    "<p><input type='text' name='meta.yourVar' placeholder='Your Custom Config'>";
+                    ;
+// for meta.XXXXX, this var is the C variable to hold the XXXXX
+int             customVar1;
+// USER CODE EXAMPLE : your custom config variable
 
 char*               ssid_pfix = (char*)"IOTValve";
 unsigned long       lastPublishMillis = - pubInterval;
@@ -53,7 +56,8 @@ void message(char* topic, byte* payload, unsigned int payloadLength) {
     if (!strcmp(updateTopic, topic)) {
 // USER CODE EXAMPLE : meta data update
 // If any meta data updated on the Internet, it can be stored to local variable to use for the logic
-        pubInterval = cfg["meta"]["pubInterval"];
+// in cfg["meta"]["XXXXX"], XXXXX should match to one in the user_html
+        customVar1 = cfg["meta"]["yourVar"];
 // USER CODE EXAMPLE
     } else if (!strncmp(commandTopic, topic, 10)) {            // strcmp return 0 if both string matches
         handleUserCommand(&root);

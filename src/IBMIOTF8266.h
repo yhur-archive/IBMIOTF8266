@@ -19,7 +19,8 @@ String              user_config_html = ""
     "<p><input type='text' name='org' placeholder='org/edge'>"
     "<p><input type='text' name='devType' placeholder='Device Type'>"
     "<p><input type='text' name='devId' placeholder='Device Id'>"
-    "<p><input type='text' name='token' placeholder='Device Token'>";
+    "<p><input type='text' name='token' placeholder='Device Token'>"
+    "<p><input type='text' name='meta.pubInterval' placeholder='Publish Interval'>";
 
 extern  String      user_html;
 
