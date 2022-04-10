@@ -93,6 +93,10 @@ void initDevice() {
         toGatewayTopic(updateTopic, devType, devId);
         toGatewayTopic(rebootTopic, devType, devId);
         toGatewayTopic(resetTopic, devType, devId);
+        // iot-2/type/ => 11 vDev/id/IOTLux01/cmd/
+        // /id/ => 4
+        // /cmd/ => 5
+        cmdBaseLen = 11 + strlen(devType) + 4 + strlen(devId) + 5;
 
         client.setClient(wifiClient);
         sprintf(iot_server, "%s", (const char*)cfg["org"]);
