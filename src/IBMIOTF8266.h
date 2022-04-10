@@ -188,14 +188,14 @@ void update_error(int err) {
 void handleIOTCommand(char* topic, JsonDocument* root) {
     JsonObject d = (*root)["d"];
 
-    if (!strcmp(responseTopic, topic)) {        // strcmp return 0 if both string matches
+    if (!strcmp(responseTopic, topic, cmdBaseLen)) {        // strcmp return 0 if both string matches
         return;                                 // just print of response for now
-    } else if (!strcmp(rebootTopic, topic)) {   // rebooting
+    } else if (!strcmp(rebootTopic, topic, cmdBaseLen)) {   // rebooting
         reboot();
-    } else if (!strcmp(resetTopic, topic)) {    // clear the configuration and reboot
+    } else if (!strcmp(resetTopic, topic, cmdBaseLen)) {    // clear the configuration and reboot
         reset_config();
         ESP.restart();
-    } else if (!strcmp(updateTopic, topic)) {
+    } else if (!strcmp(updateTopic, topic, cmdBaseLen)) {
         JsonArray fields = d["fields"];
         for(JsonArray::iterator it=fields.begin(); it!=fields.end(); ++it) {
             DynamicJsonDocument field = *it;

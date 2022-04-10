@@ -53,7 +53,7 @@ void message(char* topic, byte* payload, unsigned int payloadLength) {
     }
 
     handleIOTCommand(topic, &root);
-    if (!strcmp(updateTopic, topic)) {
+    if (!strncmp(updateTopic, topic, cmdBaseLen)) {
 // USER CODE EXAMPLE : meta data update
 // If any meta data updated on the Internet, it can be stored to local variable to use for the logic
 // in cfg["meta"]["XXXXX"], XXXXX should match to one in the user_html
