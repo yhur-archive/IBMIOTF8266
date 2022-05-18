@@ -190,9 +190,9 @@ void handleIOTCommand(char* topic, JsonDocument* root) {
 
     if (!strncmp(responseTopic, topic, cmdBaseLen)) {        // strcmp return 0 if both string matches
         return;                                 // just print of response for now
-    } else if (!strncmp(rebootTopic, topic, cmdBaseLen)) {   // rebooting
+    } else if (strstr(topic, "device/reboot")) {   // rebooting
         reboot();
-    } else if (!strncmp(resetTopic, topic, cmdBaseLen)) {    // clear the configuration and reboot
+    } else if (strstr(topic, "device/factory_reset")) {    // clear the configuration and reboot
         reset_config();
         ESP.restart();
     } else if (!strncmp(updateTopic, topic, cmdBaseLen)) {
