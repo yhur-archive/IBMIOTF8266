@@ -53,13 +53,13 @@ void message(char* topic, byte* payload, unsigned int payloadLength) {
     }
 
     handleIOTCommand(topic, &root);
-    if (!strncmp(updateTopic, topic, cmdBaseLen)) {
+    if (strstr(topic, "/device/update")) {
 // USER CODE EXAMPLE : meta data update
 // If any meta data updated on the Internet, it can be stored to local variable to use for the logic
 // in cfg["meta"]["XXXXX"], XXXXX should match to one in the user_html
         customVar1 = cfg["meta"]["yourVar"];
 // USER CODE EXAMPLE
-    } else if (!strncmp(commandTopic, topic, cmdBaseLen)) {            // strcmp return 0 if both string matches
+    } else if (strstr(topic, "/cmd/")) {            // strcmp return 0 if both string matches
         handleUserCommand(&root);
     }
 }
