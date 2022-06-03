@@ -30,7 +30,6 @@ WiFiClient          wifiClient;
 PubSubClient        client;
 char                iot_server[100];
 char                msgBuffer[JSON_BUFFER_LENGTH];
-int                 cmdBaseLen = 10;
 unsigned long       pubInterval;
 
 char                fpFile[] = "/fingerprint.txt";
@@ -51,7 +50,7 @@ bool subscribeTopic(const char* topic) {
 
 void toGatewayTopic(char* topic, const char* devType, const char* devId) {
     char buffer[200];
-    char devInfo[50];
+    char devInfo[100];
     sprintf(devInfo, "/type/%s/id/%s", devType, devId);
 
     char* slash = strchr(topic, '/');
@@ -96,7 +95,6 @@ void initDevice() {
         // iot-2/type/ => 11 vDev/id/IOTLux01/cmd/
         // /id/ => 4
         // /cmd/ => 5
-        cmdBaseLen = 11 + strlen(devType) + 4 + strlen(devId) + 5;
 
         client.setClient(wifiClient);
         sprintf(iot_server, "%s", (const char*)cfg["org"]);
@@ -105,9 +103,10 @@ void initDevice() {
 }
 
 void set_iot_server() {
+Serial.println(wifiClientSecure.connect(iot_server, mqttPort));
     if(mqttPort == 8883) {
         if (!wifiClientSecure.connect(iot_server, mqttPort)) {
-            Serial.println("connection failed");
+            Serial.println("ssl connection failed");
             return;
         }
     } else {
@@ -123,7 +122,13 @@ void iot_connect() {
 
     while (!client.connected()) {
         sprintf(msgBuffer,"d:%s:%s:%s", (const char*)cfg["org"], (const char*)cfg["devType"], (const char*)cfg["devId"]);
-        if (client.connect(msgBuffer,"use-token-auth",cfg["token"])) {
+        int rc = 0;
+        if(mqttPort == 8883) {
+            rc = client.connect(msgBuffer,"use-token-auth",cfg["token"]);
+        } else {
+            rc = client.connect(msgBuffer);
+        }
+        if (rc) {
             Serial.println("MQ connected");
         } else {
             if( digitalRead(RESET_PIN) == 0 ) {
@@ -188,14 +193,14 @@ void update_error(int err) {
 void handleIOTCommand(char* topic, JsonDocument* root) {
     JsonObject d = (*root)["d"];
 
-    if (!strncmp(responseTopic, topic, cmdBaseLen)) {        // strcmp return 0 if both string matches
+    if (strstr(topic, "/response")) {        // strcmp return 0 if both string matches
         return;                                 // just print of response for now
-    } else if (strstr(topic, "device/reboot")) {   // rebooting
+    } else if (strstr(topic, "/device/reboot")) {   // rebooting
         reboot();
-    } else if (strstr(topic, "device/factory_reset")) {    // clear the configuration and reboot
+    } else if (strstr(topic, "/device/factory_reset")) {    // clear the configuration and reboot
         reset_config();
         ESP.restart();
-    } else if (!strncmp(updateTopic, topic, cmdBaseLen)) {
+    } else if (strstr(topic, "/device/update")) {
         JsonArray fields = d["fields"];
         for(JsonArray::iterator it=fields.begin(); it!=fields.end(); ++it) {
             DynamicJsonDocument field = *it;
@@ -211,7 +216,7 @@ void handleIOTCommand(char* topic, JsonDocument* root) {
             }
         }
         pubInterval = cfg["meta"]["pubInterval"];
-    } else if (!strncmp(commandTopic, topic, cmdBaseLen)) {
+    } else if (strstr(topic, "/cmd/")) {
         if (d.containsKey("upgrade")) {
             JsonObject upgrade = d["upgrade"];
             String response = "{\"OTA\":{\"status\":";
