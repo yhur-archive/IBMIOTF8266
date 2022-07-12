@@ -71,8 +71,11 @@ void setup() {
 // USER CODE EXAMPLE
 
     initDevice();
-    // If not configured it'll be configured and rebooted in the initDevice(),
-    // If configured, initDevice will set the proper setting to cfg variable
+// USER CODE EXAMPLE : meta data to local variable
+    JsonObject meta = cfg["meta"];
+    pubInterval = meta.containsKey("pubInterval") ? atoi((const char*)meta["pubInterval"]) : 0;
+    lastPublishMillis = - pubInterval;
+// USER CODE EXAMPLE
 
     WiFi.mode(WIFI_STA);
     WiFi.begin((const char*)cfg["ssid"], (const char*)cfg["w_pw"]);
@@ -82,15 +85,9 @@ void setup() {
     }
     // main setup
     Serial.printf("\nIP address : "); Serial.println(WiFi.localIP());
-// USER CODE EXAMPLE : meta data to local variable
-    JsonObject meta = cfg["meta"];
-    pubInterval = meta.containsKey("pubInterval") ? atoi((const char*)meta["pubInterval"]) : 0;
-    lastPublishMillis = - pubInterval;
-// USER CODE EXAMPLE
     
-    set_iot_server();
     client.setCallback(message);
-    iot_connect();
+    set_iot_server();
 }
 
 void loop() {

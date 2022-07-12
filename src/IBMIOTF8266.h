@@ -36,8 +36,6 @@ char                fpFile[] = "/fingerprint.txt";
 String              fingerprint = "B3 B7 C3 0D 9D 32 E6 A2 8A FC FD BA 11 BB 05 5E E1 D9 9E F7";
 int                 mqttPort = 8883;
 
-unsigned long       lastWiFiConnect;
-
 bool subscribeTopic(const char* topic) {
     if (client.subscribe(topic)) {
         Serial.printf("Subscription to %s OK\n", topic);
@@ -92,9 +90,6 @@ void initDevice() {
         toGatewayTopic(updateTopic, devType, devId);
         toGatewayTopic(rebootTopic, devType, devId);
         toGatewayTopic(resetTopic, devType, devId);
-        // iot-2/type/ => 11 vDev/id/IOTLux01/cmd/
-        // /id/ => 4
-        // /cmd/ => 5
 
         client.setClient(wifiClient);
         sprintf(iot_server, "%s", (const char*)cfg["org"]);
@@ -103,7 +98,6 @@ void initDevice() {
 }
 
 void set_iot_server() {
-Serial.println(wifiClientSecure.connect(iot_server, mqttPort));
     if(mqttPort == 8883) {
         if (!wifiClientSecure.connect(iot_server, mqttPort)) {
             Serial.println("ssl connection failed");
@@ -116,38 +110,44 @@ Serial.println(wifiClientSecure.connect(iot_server, mqttPort));
         }
     }
     client.setServer(iot_server, mqttPort);   //IOT
+    iot_connect();
 }
 
 void iot_connect() {
 
     while (!client.connected()) {
-        sprintf(msgBuffer,"d:%s:%s:%s", (const char*)cfg["org"], (const char*)cfg["devType"], (const char*)cfg["devId"]);
-        int rc = 0;
+        int mqConnected = 0;
         if(mqttPort == 8883) {
-            rc = client.connect(msgBuffer,"use-token-auth",cfg["token"]);
+            sprintf(msgBuffer,"d:%s:%s:%s", (const char*)cfg["org"], (const char*)cfg["devType"], (const char*)cfg["devId"]);
+            mqConnected = client.connect(msgBuffer,"use-token-auth",cfg["token"]);
         } else {
-            rc = client.connect(msgBuffer);
+            sprintf(msgBuffer,"d:%s:%s", (const char*)cfg["devType"], (const char*)cfg["devId"]);
+            mqConnected = client.connect(msgBuffer);
         }
-        if (rc) {
+        if (mqConnected) {
             Serial.println("MQ connected");
         } else {
             if( digitalRead(RESET_PIN) == 0 ) {
                 reboot();
             }
             if(WiFi.status() == WL_CONNECTED) {
-                lastWiFiConnect = millis();
-                Serial.printf("MQ Connection fail RC = %d, try again in 5 seconds\n", client.state());
+                if(client.state() == -2) {
+                    if (mqttPort == 8883) {
+                        wifiClientSecure.connect(iot_server, mqttPort);
+                    } else {
+                        wifiClient.connect(iot_server, mqttPort);
+                    }
+                } else {
+                    Serial.printf("MQ Connection fail RC = %d, try again in 5 seconds\n", client.state());
+                }
                 delay(5000);
             } else {
                 Serial.println("Reconnecting to WiFi");
+                WiFi.disconnect();
                 WiFi.begin();
                 while (WiFi.status() != WL_CONNECTED) {
-                    if(lastWiFiConnect + 3600000 < millis()) {
-                        reboot();
-                    } else {
-                        delay(5000);
-                        Serial.print("*");
-                    }
+                    Serial.print("*");
+                    delay(5000);
                 }
             }
         }
@@ -193,7 +193,7 @@ void update_error(int err) {
 void handleIOTCommand(char* topic, JsonDocument* root) {
     JsonObject d = (*root)["d"];
 
-    if (strstr(topic, "/response")) {        // strcmp return 0 if both string matches
+    if (strstr(topic, "/response")) {
         return;                                 // just print of response for now
     } else if (strstr(topic, "/device/reboot")) {   // rebooting
         reboot();
@@ -205,7 +205,7 @@ void handleIOTCommand(char* topic, JsonDocument* root) {
         for(JsonArray::iterator it=fields.begin(); it!=fields.end(); ++it) {
             DynamicJsonDocument field = *it;
             const char* fieldName = field["field"];
-            if (strcmp (fieldName, "metadata") == 0) {
+            if (strstr(fieldName, "metadata")) {
                 JsonObject fieldValue = field["value"];
                 cfg.remove("meta");
                 JsonObject meta = cfg.createNestedObject("meta");
