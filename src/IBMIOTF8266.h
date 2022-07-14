@@ -6,6 +6,7 @@
 #include <ESP8266httpUpdate.h>
 #include <ConfigPortal8266.h>
 
+const char          compile_date[] = __DATE__ " " __TIME__;
 char                publishTopic[200]   = "iot-2/evt/status/fmt/json";
 char                infoTopic[200]      = "iot-2/evt/info/fmt/json";
 char                commandTopic[200]   = "iot-2/cmd/+/fmt/+";
@@ -254,7 +255,9 @@ void handleIOTCommand(char* topic, JsonDocument* root) {
             }
         } else if (d.containsKey("config")) {
             char maskBuffer[JSON_BUFFER_LENGTH];
+            cfg["compile_date"] = compile_date;
             maskConfig(maskBuffer);
+            cfg.remove("compile_date");
             String info = String("{\"config\":") + String(maskBuffer) + String("}");
             client.publish(infoTopic, info.c_str());
         }
