@@ -98,22 +98,6 @@ void initDevice() {
     }
 }
 
-void set_iot_server() {
-    if(mqttPort == 8883) {
-        if (!wifiClientSecure.connect(iot_server, mqttPort)) {
-            Serial.println("ssl connection failed");
-            return;
-        }
-    } else {
-        if (!wifiClient.connect(iot_server, mqttPort)) {
-            Serial.println("connection failed");
-            return;
-        }
-    }
-    client.setServer(iot_server, mqttPort);   //IOT
-    iot_connect();
-}
-
 void iot_connect() {
 
     while (!client.connected()) {
@@ -174,6 +158,22 @@ void iot_connect() {
         String info = String("{\"info\":") + String(msgBuffer) + String("}");
         client.publish(infoTopic, info.c_str());
     }
+}
+
+void set_iot_server() {
+    if(mqttPort == 8883) {
+        if (!wifiClientSecure.connect(iot_server, mqttPort)) {
+            Serial.println("ssl connection failed");
+            return;
+        }
+    } else {
+        if (!wifiClient.connect(iot_server, mqttPort)) {
+            Serial.println("connection failed");
+            return;
+        }
+    }
+    client.setServer(iot_server, mqttPort);   //IOT
+    iot_connect();
 }
 
 void publishError(char *msg) {

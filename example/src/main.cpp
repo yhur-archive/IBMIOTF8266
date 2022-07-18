@@ -32,10 +32,10 @@ void handleUserCommand(JsonDocument* root) {
 // USER CODE EXAMPLE : status/change update
 // code if any of device status changes to notify the change
     if(d.containsKey("valve")) {
-        if (strcmp(d["valve"], "on")) {
-            digitalWrite(RELAY, LOW);
-        } else {
+        if (strstr(d["valve"], "on")) {
             digitalWrite(RELAY, HIGH);
+        } else {
+            digitalWrite(RELAY, LOW);
         }
         lastPublishMillis = - pubInterval;
     }
@@ -59,7 +59,7 @@ void message(char* topic, byte* payload, unsigned int payloadLength) {
 // in cfg["meta"]["XXXXX"], XXXXX should match to one in the user_html
         customVar1 = cfg["meta"]["yourVar"];
 // USER CODE EXAMPLE
-    } else if (strstr(topic, "/cmd/")) {            // strcmp return 0 if both string matches
+    } else if (strstr(topic, "/cmd/")) {
         handleUserCommand(&root);
     }
 }
