@@ -30,7 +30,7 @@ WiFiClientSecure    wifiClientSecure;
 WiFiClient          wifiClient;
 PubSubClient        client;
 char                iot_server[100];
-char                msgBuffer[JSON_BUFFER_LENGTH];
+char                msgBuffer[JSON_CHAR_LENGTH];
 unsigned long       pubInterval;
 
 char                fpFile[] = "/fingerprint.txt";
@@ -254,7 +254,7 @@ void handleIOTCommand(char* topic, JsonDocument* root) {
                 Serial.println(response);
             }
         } else if (d.containsKey("config")) {
-            char maskBuffer[JSON_BUFFER_LENGTH];
+            char maskBuffer[JSON_CHAR_LENGTH];
             cfg["compile_date"] = compile_date;
             maskConfig(maskBuffer);
             cfg.remove("compile_date");
