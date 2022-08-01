@@ -130,9 +130,11 @@ void iot_connect() {
                 Serial.println("Reconnecting to WiFi");
                 WiFi.disconnect();
                 WiFi.begin();
+                int i = 0;
                 while (WiFi.status() != WL_CONNECTED) {
                     Serial.print("*");
                     delay(5000);
+                    if(i++ > 10) reboot();
                 }
             }
         }
